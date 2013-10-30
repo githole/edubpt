@@ -8,7 +8,7 @@
 namespace edubpt {
 
 // レンダリングするシーンデータ
-	/*
+
 const Sphere spheres[] = {
 	Sphere(7.5,Vec(50.0, 72.5, 81.6),   Color(16,16,16), Color(),              REFLECTION_TYPE_DIFFUSE), //照明
 	Sphere(1e5, Vec( 1e5+1, 40.8, 81.6), Color(),      Color(0.75, 0.25, 0.25), REFLECTION_TYPE_DIFFUSE), // 左
@@ -22,8 +22,8 @@ const Sphere spheres[] = {
 	Sphere(16.5,Vec(19, 16.5, 25),       Color(),      Color(0.99, 0.99, 0.99), REFLECTION_TYPE_SPECULAR), // 鏡
 	Sphere(16.5,Vec(77, 16.5, 78),       Color(),      Color(0.99, 0.99, 0.99), REFLECTION_TYPE_REFRACTION), //ガラス
 };
-*/
 
+	/*
 const Sphere spheres[] = {
 	Sphere(1.0, Vec(1.0, 1.0, 1.0),   Color(16,16,16), Color(),              REFLECTION_TYPE_DIFFUSE), //照明
 	Sphere(1e5, Vec( 1e5+1, 40.8, 81.6), Color(),      Color(0.75, 0.25, 0.25), REFLECTION_TYPE_DIFFUSE), // 左
@@ -36,7 +36,7 @@ const Sphere spheres[] = {
 	Sphere(16.5,Vec(50, 16.5, 25),       Color(),      Color(0.99, 0.99, 0.99), REFLECTION_TYPE_SPECULAR), // 鏡
 	Sphere(16.5,Vec(77, 16.5, 78),       Color(),      Color(0.99, 0.99, 0.99), REFLECTION_TYPE_REFRACTION), //ガラス
 };
-
+*/
 
 	/*
 const Sphere spheres[] = {

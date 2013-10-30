@@ -169,13 +169,13 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 
 	// num_light_vertex == 0のとき、カメラ側からのパスが光源にヒットしていれば、それをサンプルとして使用する
 	if (pt_result.is_light_hit) {
-		const double mis_weight = calc_mis_weight(camera, eye_vs[eye_vs.size()-1].total_pdf_A, eye_vs, light_vs, eye_vs.size(), 0);
+		const double mis_weight = calc_mis_weight(camera, eye_vs[eye_vs.size()-1].total_pdf_A, eye_vs, light_vs, (const int)eye_vs.size(), 0);
 		const Color result = mis_weight * pt_result.value;
 		bpt_result.data.push_back(BidirectionalPathtracingResult::Data(imagebuffer_x, imagebuffer_y, result));
 	}
 	// num_eye_vertex == 0のとき、光源側からのパスがレンズにヒットしていれば、それをサンプルとして使用する
 	if (lt_result.is_lens_hit) {
-		const double mis_weight = calc_mis_weight(camera, light_vs[light_vs.size()-1].total_pdf_A, eye_vs, light_vs, 0, light_vs.size());
+		const double mis_weight = calc_mis_weight(camera, light_vs[light_vs.size()-1].total_pdf_A, eye_vs, light_vs, 0, (const int)light_vs.size());
 		const int lx = lt_result.imagebuffer_x, ly = lt_result.imagebuffer_y;
 		const Color result =  mis_weight * lt_result.value;
 		bpt_result.data.push_back(BidirectionalPathtracingResult::Data(lx, ly, result));
