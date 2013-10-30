@@ -1,4 +1,4 @@
-#ifndef _SAMPLING_H_
+﻿#ifndef _SAMPLING_H_
 #define _SAMPLING_H_
 
 namespace edubpt {

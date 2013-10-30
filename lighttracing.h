@@ -1,4 +1,4 @@
-#ifndef _LIGHTTRACING_H_
+﻿#ifndef _LIGHTTRACING_H_
 #define _LIGHTTRACING_H_
 
 #include "hdr.h"

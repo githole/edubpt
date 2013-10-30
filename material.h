@@ -1,4 +1,4 @@
-#ifndef _MATERIAL_H_
+﻿#ifndef _MATERIAL_H_
 #define _MATERIAL_H_
 
 #include "vec.h"

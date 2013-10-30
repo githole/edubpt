@@ -1,4 +1,4 @@
-#ifndef _REFERENCE_PATHTRACING_
+﻿#ifndef _REFERENCE_PATHTRACING_
 #define _REFERENCE_PATHTRACING_
 
 #include "hdr.h"

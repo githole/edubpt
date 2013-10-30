@@ -1,4 +1,4 @@
-#ifndef _HDR_H_
+﻿#ifndef _HDR_H_
 #define _HDR_H_
 
 #include <algorithm>

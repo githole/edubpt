@@ -1,4 +1,4 @@
-#ifndef _RAY_H_
+﻿#ifndef _RAY_H_
 #define _RAY_H_
 
 #include "vec.h"

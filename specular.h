@@ -1,4 +1,4 @@
-#ifndef _SPECULAR_H_
+﻿#ifndef _SPECULAR_H_
 #define _SPECULAR_H_
 
 #include "material.h"

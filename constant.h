@@ -1,4 +1,4 @@
-#ifndef _CONSTANT_H_
+﻿#ifndef _CONSTANT_H_
 #define _CONSTANT_H_
 
 namespace edubpt {
