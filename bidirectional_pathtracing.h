@@ -1,7 +1,6 @@
 ﻿#ifndef _BIDIRECTIONAL_PATHTRACING_H_
 #define _BIDIRECTIONAL_PATHTRACING_H_
 
-#include "hdr.h"
 #include "random.h"
 #include "scene.h"
 #include "util.h"
@@ -14,7 +13,6 @@
 #include "pathtracing.h"
 #include "lighttracing.h"
 
-#include <omp.h>
 #include <assert.h>
 
 namespace edubpt {

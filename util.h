@@ -1,6 +1,7 @@
 ﻿#ifndef _UTIL_H_
 #define _UTIL_H_
 
+#include <algorithm>
 #include "constant.h"
 
 namespace edubpt {

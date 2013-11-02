@@ -14,6 +14,7 @@
 #include <omp.h>
 #endif
 #include <assert.h>
+#include <iostream>
 
 namespace edubpt {
 
@@ -23,7 +24,6 @@ int render_by_refernce_pathtracing(const Camera &camera, const int num_threads) 
 	const int height = camera.image_height_px;
 	const int spp = camera.samples_per_pixel;
 
-	HDRImage hdr(width, height);
 	std::vector<Color> image_buffer(width * height);
 #ifdef USE_OPENMP
 	omp_set_num_threads(num_threads);
@@ -54,16 +54,6 @@ int render_by_refernce_pathtracing(const Camera &camera, const int num_threads) 
 					camera.W * L * coefficient / (P_Image * P_lens);
 			}
 		}
-		/*
-		if (sample % 128 == 0) {
-			char buf[256];
-			sprintf(buf, "ref_pt_%03d.hdr", sample);
-			for (int y = 0; y < height; ++y)
-				for (int x = 0; x < width; ++x)
-					*hdr.image_ptr(width - x - 1, height - y - 1) = image_buffer[y * width + x] / ((double)width * height * (sample + 1));
-			hdr.save(buf);
-		}
-		*/
 	}
 
 	// サンプル数で割る + 左右反転
@@ -82,7 +72,6 @@ int render_by_pathtracing(const Camera &camera, const int num_threads) {
 	const int height = camera.image_height_px;
 	const int spp = camera.samples_per_pixel;
 
-	HDRImage hdr(width, height);
 	std::vector<Color> image_buffer(width * height);
 #ifdef USE_OPENMP
 	omp_set_num_threads(num_threads);
@@ -104,18 +93,6 @@ int render_by_pathtracing(const Camera &camera, const int num_threads) {
 				}
 			}
 		}
-		/*
-		if (sample % 128 == 0) {
-			char buf[256];
-			sprintf(buf, "pt_%03d.hdr", sample);
-			for (int y = 0; y < height; ++y)
-				for (int x = 0; x < width; ++x) {
-					// std::cout << image_buffer[y * width + x].x << " ";
-					*hdr.image_ptr(width - x - 1, height - y - 1) = image_buffer[y * width + x] / ((double)width * height * (sample + 1));
-				}
-			hdr.save(buf);
-		}
-		*/
 	}
 	
 	// サンプル数で割る + 左右反転
@@ -134,7 +111,6 @@ void render_by_lighttracing(const Camera &camera, const int num_threads) {
 	const int height = camera.image_height_px;
 	const int spp = camera.samples_per_pixel;
 
-	HDRImage hdr(width, height);
 	std::vector<Color> image_buffer(width * height * num_threads);
 #ifdef USE_OPENMP
 	omp_set_num_threads(num_threads);
@@ -163,26 +139,6 @@ void render_by_lighttracing(const Camera &camera, const int num_threads) {
 					image_buffer[(thread_id * width * height) + y * width + x] = image_buffer[(thread_id * width * height) + y * width + x] + result.value;
 				}
 			}
-
-			/*
-			if (sample % (16 * width * height) == 0) {
-#pragma omp barrier
-				if (thread_id == 0) {
-					std::cout << sample << " ";
-					char buf[256];
-					sprintf(buf, "lt_%03d.hdr", sample / (width * height));
-					for (int y = 0; y < height; ++y)
-						for (int x = 0; x < width; ++x)
-							*hdr.image_ptr(x, y) = Color();
-					for (int t = 0; t < num_threads; ++t)
-						for (int y = 0; y < height; ++y)
-							for (int x = 0; x < width; ++x)
-								*hdr.image_ptr(width - x - 1, height - y - 1) = *hdr.image_ptr(width - x - 1, height - y - 1) + image_buffer[(t * width * height) + y * width + x] / (sample + 1) / num_threads;
-					hdr.save(buf);
-				}
-#pragma omp barrier
-			}
-			*/
 		}
 	}
 	
@@ -203,7 +159,6 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 	const int height = camera.image_height_px;
 	const int spp = camera.samples_per_pixel;
 
-	HDRImage hdr(width, height);
 	std::vector<Color> image_buffer(width * height * num_threads);
 #ifdef USE_OPENMP
 	omp_set_num_threads(num_threads);
@@ -235,28 +190,6 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 					}
 				}
 			}
-			/*
-			if (1) {
-#pragma omp barrier
-				if (thread_id == 0) {
-					std::cout << sample << " ";
-					char buf[256];
-					sprintf(buf, "bpt_%03d.hdr", sample);
-					for (int y = 0; y < height; ++y)
-						for (int x = 0; x < width; ++x)
-							*hdr.image_ptr(x, y) = Color();
-					for (int t = 0; t < num_threads; ++t)
-						for (int y = 0; y < height; ++y)
-							for (int x = 0; x < width; ++x) {
-								const int idx = (t * width * height) + (y * width + x);
-								*hdr.image_ptr(width - x - 1, height - y - 1) = 
-									*hdr.image_ptr(width - x - 1, height - y - 1) + image_buffer[idx]	 / ((double) width * height * (sample + 1)) / num_threads;
-							}
-					hdr.save(buf);
-				}
-#pragma omp barrier
-			}
-			*/
 		}
 	}
 	// サンプル数で割る + 左右反転

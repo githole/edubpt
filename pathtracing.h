@@ -1,7 +1,8 @@
 ﻿#ifndef _PATHTRACING_H_
 #define _PATHTRACING_H_
 
-#include "hdr.h"
+#include <vector>
+
 #include "random.h"
 #include "scene.h"
 #include "util.h"

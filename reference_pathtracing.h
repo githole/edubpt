@@ -1,7 +1,6 @@
 ﻿#ifndef _REFERENCE_PATHTRACING_
 #define _REFERENCE_PATHTRACING_
 
-#include "hdr.h"
 #include "random.h"
 #include "scene.h"
 #include "util.h"

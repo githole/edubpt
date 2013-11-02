@@ -1,7 +1,6 @@
 ﻿#ifndef _LIGHTTRACING_H_
 #define _LIGHTTRACING_H_
 
-#include "hdr.h"
 #include "random.h"
 #include "scene.h"
 #include "util.h"
