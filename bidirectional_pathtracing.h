@@ -20,20 +20,26 @@ namespace edubpt {
 //
 // 双方向パストレーシング
 //
-double calc_pdf_A_by_pathtracing(const Camera &camera, const Vertex &xip1, const Vertex &xi) {
-	const Vec to = xi.position - xip1.position;
+
+// 頂点fromから頂点nextをサンプリングしたとするとき、面積測度に関するサンプリング確率密度を計算する
+// 今回はLighttracingもPathtracingも同じ戦略でサンプリングを行うため一つの関数で良い
+// サンプリング戦略が異なるなら、それぞれのための関数を用意する必要がある
+double calc_pdf_A(const Camera &camera, const Vertex &from, const Vertex &next) {
+	const Vec to = next.position - from.position;
 	const Vec normalized_to = normalize(to);
 	double coeff = 0.0;
 
 	// 始点のオブジェクトの種類によって、その次の頂点のサンプリング確率の計算方法が変わる
-	switch (xip1.type) {
+	switch (from.type) {
 	case Vertex::OBJECT_TYPE_LIGHT:
 	case Vertex::OBJECT_TYPE_DIFFUSE:
-		coeff = sample_hemisphere_pdf_omega(xip1.orienting_normal, normalized_to);
+		coeff = sample_hemisphere_pdf_omega(from.orienting_normal, normalized_to);
 		break;
 	case Vertex::OBJECT_TYPE_LENS:
 		{
-			const Ray test_ray(xi.position, -1.0 * normalized_to);
+			// レンズ上の点からシーン上の点をサンプリングするときの面積測度に関する確率密度を計算
+			// イメージセンサ上の点のサンプリング確率密度を元に変換する
+			const Ray test_ray(next.position, -1.0 * normalized_to);
 			Vec position_on_lens, position_on_objectplane, position_on_imagesensor, uv_on_imagesensor;
 			const double lens_t = camera.intersect_lens(test_ray, &position_on_lens, &position_on_objectplane, &position_on_imagesensor, &uv_on_imagesensor);
 			if (kEPS < lens_t) {
@@ -42,16 +48,18 @@ double calc_pdf_A_by_pathtracing(const Camera &camera, const Vertex &xip1, const
 				const Vec x0_x1 = test_ray.org - position_on_lens;
 					
 				const double P_Image = 1.0 / (camera.imagesensor_width * camera.imagesensor_height);
-				const double PA_x1 = camera.P_Image_to_PA_x1(P_Image, x0_xV, x0_x1, xi.orienting_normal);
+				const double PA_x1 = camera.P_Image_to_PA_x1(P_Image, x0_xV, x0_x1, next.orienting_normal);
 				return PA_x1;
 			} 
 			return 0.0;
 		}
 		break;
 	case Vertex::OBJECT_TYPE_SPECULAR:
-		if (spheres[xip1.objectID].reflection_type == REFLECTION_TYPE_REFRACTION) {
+		// 始点がスペキュラ上に存在した場合、次の点が屈折によってサンプリングされたのか、反射によってサンプリングされたかによって
+		// 次の頂点のサンプリング確率が変わる
+		if (spheres[from.objectID].reflection_type == REFLECTION_TYPE_REFRACTION) {
 			// 屈折か反射かを判定
-			const double cost = dot(xip1.object_normal, normalize(to));
+			const double cost = dot(from.object_normal, normalize(to));
 			if (cost > 0.0) // 反射
 				coeff = reflection_probability;
 			else
@@ -61,42 +69,12 @@ double calc_pdf_A_by_pathtracing(const Camera &camera, const Vertex &xip1, const
 		break;
 	}
 
-	double cost = dot(-1.0 * normalized_to, xi.orienting_normal);
+	double cost = dot(-1.0 * normalized_to, next.orienting_normal);
 	if (cost < 0.0)
-		cost = dot(-1.0 * normalized_to, -1.0 * xi.orienting_normal);
+		cost = dot(-1.0 * normalized_to, -1.0 * next.orienting_normal);
 	return coeff * (cost / to.length_squared());
 }
-double calc_pdf_A_by_lighttracing(const Vertex &xim1, const Vertex &xi) {
-	const Vec to = xi.position - xim1.position;
-	const Vec normalized_to = normalize(to);
-	double coeff = 0.0;
-	
-	switch (xim1.type) {
-	case Vertex::OBJECT_TYPE_LIGHT:
-	case Vertex::OBJECT_TYPE_DIFFUSE:
-		coeff = sample_hemisphere_pdf_omega(xim1.orienting_normal, normalized_to);
-		break;
-	case Vertex::OBJECT_TYPE_LENS:
-		assert(false);
-		break;
-	case Vertex::OBJECT_TYPE_SPECULAR:
-		if (spheres[xim1.objectID].reflection_type == REFLECTION_TYPE_REFRACTION) {
-			// 屈折か反射かを判定
-			const double cost = dot(xim1.object_normal, normalize(to));
-			if (cost > 0.0) // 反射
-				coeff = reflection_probability;
-			else
-				coeff = 1.0 - reflection_probability;
-		} else
-			coeff = 1.0;
-		break;
-	}
 
-	double cost = dot(-1.0 * normalized_to, xi.orienting_normal);
-	if (cost < 0.0)
-		cost = dot(-1.0 * normalized_to, -1.0 * xi.orienting_normal);
-	return  coeff * (cost / to.length_squared());
-}
 double calc_mis_weight(const Camera &camera, const double total_pdf_A, const std::vector<Vertex> &eye_vs, const std::vector<Vertex> &light_vs, const int num_eye_vertex, const int num_light_vertex) {
 	std::vector<const Vertex*> vs(num_light_vertex + num_eye_vertex);
 	std::vector<double> pi1_pi(num_eye_vertex + num_light_vertex);
@@ -104,20 +82,21 @@ double calc_mis_weight(const Camera &camera, const double total_pdf_A, const std
 	const double PA_x0 = camera.sampling_pdf_on_lens(); // レンズ上のサンプリング確率
 
 	// 頂点を一列に並べる
+	// vs[0] = y0, vs[1] = y1, ... vs[k-1] = x1, vs[k] = x0
 	const int k = num_eye_vertex + num_light_vertex - 1;
 	for (int i = 0; i < num_light_vertex; ++i)
 		vs[i] = &light_vs[i];
 	for (int i = num_eye_vertex - 1; i >= 0; --i)
 		vs[num_light_vertex + num_eye_vertex - 1 - i] = &eye_vs[i];
 
-	// ロシアンルーレットの確率忘れずに！
-	pi1_pi[0] = PA_y0 / (calc_pdf_A_by_pathtracing(camera, *vs[1], *vs[0]) * russian_roulette(spheres[vs[0]->objectID]));
+	// ロシアンルーレットの確率を忘れずに入れる
+	pi1_pi[0] = PA_y0 / (calc_pdf_A(camera, *vs[1], *vs[0]) * russian_roulette(spheres[vs[0]->objectID]));
 	for (int i = 1; i < k; ++i) {
-		const double a = calc_pdf_A_by_lighttracing(*vs[i - 1], *vs[i]);
-		const double b = calc_pdf_A_by_pathtracing(camera, *vs[i + 1], *vs[i]);
+		const double a = calc_pdf_A(camera, *vs[i - 1], *vs[i]);
+		const double b = calc_pdf_A(camera, *vs[i + 1], *vs[i]);
 		pi1_pi[i] = a / b;
 	}
-	pi1_pi[k] = (calc_pdf_A_by_lighttracing(*vs[k - 1], *vs[k]) * russian_roulette(spheres[vs[k]->objectID])) / PA_x0;
+	pi1_pi[k] = (calc_pdf_A(camera, *vs[k - 1], *vs[k]) * russian_roulette(spheres[vs[k]->objectID])) / PA_x0;
 
 	// pを求める
 	std::vector<double> p(num_eye_vertex + num_light_vertex + 1);
@@ -178,6 +157,8 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 		const Color result =  mis_weight * lt_result.value;
 		bpt_result.data.push_back(BidirectionalPathtracingResult::Data(lx, ly, result));
 	}
+
+	// 各頂点間を接続する
 	for (int num_eye_vertex = 1; num_eye_vertex <= eye_vs.size(); ++num_eye_vertex) {
 		for (int num_light_vertex = 1; num_light_vertex <= light_vs.size(); ++num_light_vertex) {
 			int target_x = imagebuffer_x, target_y = imagebuffer_y;
@@ -194,23 +175,23 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			Color light_throughput = light_end.throughput;
 			Color eye_weight(1, 1, 1), light_weight(1, 1, 1);
 
-			// 端点間の交差判定（必要に応じてレンズとの交差判定も行う）
+			// 端点間の交差判定
 			Intersection intersection;
 			const Vec light_end_to_eye_end = eye_end.position - light_end.position;
 			Ray test_ray = Ray(light_end.position, normalize(light_end_to_eye_end));
 			intersect_scene(test_ray, &intersection);
 					
-			// nun_light_vertex == 1のとき、非完全拡散光源の場合は相手の頂点の位置次第でMCスループットが変化するため別処理を挟む
+			// nun_light_vertex == 1のとき、非完全拡散光源の場合は相手の頂点の位置次第でMCスループットが変化するため改めて光源からの放射輝度値を計算する
 			// 今回は完全拡散光源なので単純にemissionの値を入れる
 			if (num_light_vertex == 1) {
 				light_throughput = spheres[light_vs[0].objectID].emission;
 			}
 			
-			// eyeパスの重み調整
+			// eye側のパスの重み調整
+			// eye側のパスの端点の種類によって変わる
 			switch (eye_end.type) {
 			case Vertex::OBJECT_TYPE_DIFFUSE:
 				eye_weight = multiply(eye_weight, spheres[eye_end.objectID].color / kPI);
-
 				// 端点同士が別の物体で遮蔽されるかどうかを判定する
 				if ((intersection.hitpoint.position - eye_end.position).length() >= kEPS) {
 					continue;
@@ -246,8 +227,9 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 				eye_weight = Color(0, 0, 0);
 				break;
 			}
-
-			// lightパスの重み調整
+			
+			// light側のパスの重み調整
+			// light側のパスの端点の種類によって変わる
 			switch (light_end.type) {
 			case Vertex::OBJECT_TYPE_DIFFUSE:
 				light_weight = multiply(light_weight, spheres[light_end.objectID].color / kPI);
@@ -267,7 +249,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 				std::max(dot(normalize(light_end_to_eye_end), light_end.orienting_normal), 0.0)) /
 				light_end_to_eye_end.length_squared();
 
-			// MIS重み
+			// MISの重みを計算する
 			const double mis_weight = calc_mis_weight(camera, total_pdf_A, eye_vs, light_vs, num_eye_vertex, num_light_vertex);
 
 			if (_isnan(mis_weight)) {

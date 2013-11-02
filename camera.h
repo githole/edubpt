@@ -72,7 +72,7 @@ struct Camera {
 			(focal_length * dot(normalize(x0_x1), normalize(imagesensor_dir))), 2.0);
 	}
 
-	// イメージセンサ上のサンプリング確率密度をシーン上のサンプリング確率密度（面積測度）に変換する
+	// イメージセンサ上のサンプリング確率密度（イメージセンサの面積測度に関する確率密度）をシーン上のサンプリング確率密度（面積測度に関する確率密度）に変換する
 	double P_Image_to_PA_x1(const double P_Image, const Vec &x0_xV, const Vec &x0_x1, const Vec &orienting_normal) const {
 		return
 			P_Image *

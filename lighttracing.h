@@ -21,31 +21,26 @@ struct LighttracingResult {
 	value(value), imagebuffer_x(imagebuffer_x), imagebuffer_y(imagebuffer_y), is_lens_hit(is_lens_hit) {}
 };
 LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Random *rnd, std::vector<Vertex> &vertices) {
-	// 光源上にサンプル生成
+	// 光源上にサンプル点生成（y0）
 	const Vec position_on_light = spheres[LightID].position + spheres[LightID].radius * sample_sphere(rnd);
 	const Vec normal_on_light = normalize(position_on_light - spheres[LightID].position);
-	
-	double total_pdf_A = (1.0 / (4.0 * kPI * spheres[LightID].radius * spheres[LightID].radius)); // 確率密度分布の積を保持（面積測度）
-	vertices.push_back(Vertex(position_on_light, normal_on_light, normal_on_light, LightID, Vertex::OBJECT_TYPE_LIGHT, total_pdf_A, Color(0, 0, 0))); // 光源上に生成された頂点を頂点リストに追加
+	double total_pdf_A = (1.0 / (4.0 * kPI * spheres[LightID].radius * spheres[LightID].radius)); // 確率密度の積を保持（面積測度に関する確率密度）
+
+	 // 光源上に生成された頂点を頂点リストに追加
+	vertices.push_back(Vertex(position_on_light, normal_on_light, normal_on_light, LightID, Vertex::OBJECT_TYPE_LIGHT, total_pdf_A, Color(0, 0, 0)));
 
 	// 現在の放射輝度（モンテカルロ積分のスループット）
 	Color MC_throughput = spheres[LightID].emission; 
 
-	// シーンをトレース
+	// 完全拡散光源を仮定しているので、Diffuse面におけるサンプリング方法と同じものをつかって次の方向を決める
 	double now_sampled_pdf_omega;
 	const Vec next_dir = sample_hemisphere_cos_term(normal_on_light, rnd, &now_sampled_pdf_omega);
 	Ray now_ray(position_on_light, next_dir);
 	Vec previous_normal = normal_on_light;
 	
-	// レンズ平面
-	const Vec lens_normal = normalize(camera.imagesensor_dir);
-	// オブジェクトプレーン平面
-	const Vec objectplane_normal = lens_normal;
 	double russian_roulette_probability = 1.0;
 	for (;;) {
-		// 交差判定
 		Intersection intersection;
-		// シーンと交差判定
 		const bool scene_hit = intersect_scene(now_ray, &intersection);
 		
 		// レンズと交差判定
@@ -90,15 +85,17 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 		if (rnd->next01() >= russian_roulette_probability) {
 			break;
 		}
-
-		// 新しい頂点がサンプリングされた
+		
+		// 新しい頂点がサンプリングされたので、トータルの確率密度に乗算する
 		total_pdf_A *= russian_roulette_probability;
-		// 新しい頂点を得たので、今までの頂点をサンプリングする確率密度関数の総計を出す
+		
 		const Vec between = now_ray.org - hitpoint.position;
+		// 新しい頂点をサンプリングするための確率密度関数は立体角測度に関するものであったため、これを面積速度に関する確率密度関数に変換する
 		const double now_sampled_pdf_A = now_sampled_pdf_omega * (dot(normalize(between), orienting_normal) / between.length_squared());
+		// 全ての頂点をサンプリングする確率密度の総計を出す
 		total_pdf_A *= now_sampled_pdf_A;
 
-		// ジオメトリターム
+		// ジオメトリターム（G項）
 		const double G =  dot(normalize(between), orienting_normal) * dot(normalize(-1.0 * between), previous_normal) / between.length_squared();
 		MC_throughput = G * MC_throughput;
 
@@ -107,6 +104,10 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 				now_object.reflection_type == REFLECTION_TYPE_DIFFUSE ? Vertex::OBJECT_TYPE_DIFFUSE :Vertex::OBJECT_TYPE_SPECULAR, 
 				total_pdf_A, MC_throughput));
 
+
+		
+		// 材質ごとの処理
+		// 次の頂点をサンプリングするために、新しいレイの方向を決める
 		switch (now_object.reflection_type) {
 		// 完全拡散面
 		case REFLECTION_TYPE_DIFFUSE: {
@@ -120,13 +121,14 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 		// 完全鏡面
 		case REFLECTION_TYPE_SPECULAR: {
 			// 完全鏡面なのでレイの反射方向は決定的。
+			// スペキュラ面におけるサンプリング確率密度はDiracのδ関数の形をとるが、分母とキャンセルされるため、係数のみ与える
 			now_sampled_pdf_omega = 1.0;
 			now_ray = Ray(hitpoint.position, reflection_vector(now_ray.dir, hitpoint.normal));
 
 			// スループット調整
-			// スペキュラBRDFはδ/cosθになる（立体角測度）
+			// スペキュラBRDFはδ/cosθになる（立体角測度に関する関数）
 			// また、このδはpdf_omegaのδとキャンセルされる（よって、δの扱いは無視してよい。now_sampled_pdf_omega = 1.0にしたのもそのため）
-			// なお、pdf_omegaはδになる（立体角測度）
+			// なお、pdf_omegaはδになる（立体角測度に関する確率密度）
 			// BRDFはcosθをかけて半球積分すると1、pdf_omegaはそのまま半球積分すると1になることからこのようになる。
 			MC_throughput = multiply(now_object.color / dot(normalize(between), orienting_normal), MC_throughput);
 					
