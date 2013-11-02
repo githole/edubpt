@@ -140,7 +140,7 @@ void render_by_lighttracing(const Camera &camera, const int num_threads) {
 	omp_set_num_threads(num_threads);
 #endif
 	
-	const long long samples_per_thread = spp * width * height / num_threads;
+	const long long samples_per_thread = (long long)spp * width * height / num_threads;
 	std::cerr << "Average samples/pixel: " << (samples_per_thread * num_threads / (width * height)) << std::endl;
 	int thread_id = 0;
 #pragma omp parallel private(thread_id)
