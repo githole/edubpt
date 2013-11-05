@@ -22,9 +22,10 @@ struct LighttracingResult {
 };
 LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Random *rnd, std::vector<Vertex> &vertices) {
 	// 光源上にサンプル点生成（y0）
-	const Vec position_on_light = spheres[LightID].position + spheres[LightID].radius * sample_sphere(rnd);
+	double pdf_A_on_light;
+	const Vec position_on_light = spheres[LightID].position + sample_sphere(spheres[LightID].radius, rnd, &pdf_A_on_light);
 	const Vec normal_on_light = normalize(position_on_light - spheres[LightID].position);
-	double total_pdf_A = (1.0 / (4.0 * kPI * spheres[LightID].radius * spheres[LightID].radius)); // 確率密度の積を保持（面積測度に関する確率密度）
+	double total_pdf_A = pdf_A_on_light; // 確率密度の積を保持（面積測度に関する確率密度）
 
 	 // 光源上に生成された頂点を頂点リストに追加
 	vertices.push_back(Vertex(position_on_light, normal_on_light, normal_on_light, LightID, Vertex::OBJECT_TYPE_LIGHT, total_pdf_A, Color(0, 0, 0)));

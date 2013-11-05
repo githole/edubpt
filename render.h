@@ -181,12 +181,12 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 				for (int x = 0; x < width; ++x) {
 					BidirectionalPathtracingResult bpt_result = bidirectional_pathtracing(camera, x, y, &random);
 
-					for (int i = 0; i < bpt_result.data.size(); ++i) {
-						const int ix = bpt_result.data[i].imagebuffer_x;
-						const int iy = bpt_result.data[i].imagebuffer_y;
+					for (int i = 0; i < bpt_result.samples.size(); ++i) {
+						const int ix = bpt_result.samples[i].imagebuffer_x;
+						const int iy = bpt_result.samples[i].imagebuffer_y;
 						const int idx = (thread_id * width * height) + (iy * width + ix);
-						if (is_valid_value(bpt_result.data[i].value))
-							image_buffer[idx] = image_buffer[idx] + bpt_result.data[i].value;
+						if (is_valid_value(bpt_result.samples[i].value))
+							image_buffer[idx] = image_buffer[idx] + bpt_result.samples[i].value;
 					}
 				}
 			}

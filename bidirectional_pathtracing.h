@@ -17,10 +17,6 @@
 
 namespace edubpt {
 
-//
-// 双方向パストレーシング
-//
-
 // 頂点fromから頂点nextをサンプリングしたとするとき、面積測度に関するサンプリング確率密度を計算する
 // 今回はLighttracingもPathtracingも同じ戦略でサンプリングを行うため一つの関数で良い
 // サンプリング戦略が異なるなら、それぞれのための関数を用意する必要がある
@@ -127,14 +123,14 @@ double calc_mis_weight(const Camera &camera, const double total_pdf_A, const std
 }
 
 struct BidirectionalPathtracingResult {
-	struct Data {
+	struct Sample {
 		int imagebuffer_x, imagebuffer_y;
 		Color value;
 		
-		Data(const int imagebuffer_x, const int imagebuffer_y, const Color &value) :
+		Sample(const int imagebuffer_x, const int imagebuffer_y, const Color &value) :
 		imagebuffer_x(imagebuffer_x), imagebuffer_y(imagebuffer_y), value(value) {}
 	};
-	std::vector<Data> data;
+	std::vector<Sample> samples;
 };
 
 BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, const int imagebuffer_x, const int imagebuffer_y, Random *rnd) {
@@ -148,14 +144,14 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 	if (pt_result.is_light_hit) {
 		const double mis_weight = calc_mis_weight(camera, eye_vs[eye_vs.size()-1].total_pdf_A, eye_vs, light_vs, (const int)eye_vs.size(), 0);
 		const Color result = mis_weight * pt_result.value;
-		bpt_result.data.push_back(BidirectionalPathtracingResult::Data(imagebuffer_x, imagebuffer_y, result));
+		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(imagebuffer_x, imagebuffer_y, result));
 	}
 	// num_eye_vertex == 0のとき、光源側からのパスがレンズにヒットしていれば、それをサンプルとして使用する
 	if (lt_result.is_lens_hit) {
 		const double mis_weight = calc_mis_weight(camera, light_vs[light_vs.size()-1].total_pdf_A, eye_vs, light_vs, 0, (const int)light_vs.size());
 		const int lx = lt_result.imagebuffer_x, ly = lt_result.imagebuffer_y;
 		const Color result =  mis_weight * lt_result.value;
-		bpt_result.data.push_back(BidirectionalPathtracingResult::Data(lx, ly, result));
+		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(lx, ly, result));
 	}
 
 	// 各頂点間を接続する
@@ -256,8 +252,9 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 				continue;
 			}
 
+			// 最終的なモンテカルロコントリビューション = MIS重み * G項 * eye側端点->light側端点への重み * light側端点->eye側端点への重み * eye側スループット * light側スループット / パスのサンプリング確率密度の総計
 			const Color result = mis_weight * multiply(multiply(G * multiply(eye_weight, light_weight), eye_throughput), light_throughput) / total_pdf_A;
-			bpt_result.data.push_back(BidirectionalPathtracingResult::Data(target_x, target_y, result));
+			bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(target_x, target_y, result));
 		}
 	}
 

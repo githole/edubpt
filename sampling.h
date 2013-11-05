@@ -28,14 +28,19 @@ Vec sample_hemisphere_cos_term(const Vec &normal, Random *rnd, double *pdf_omega
 	return dir;
 }
 
-Vec sample_sphere(Random *rnd) {
+// 半径Rの球面上から一点をサンプリング
+Vec sample_sphere(const double R, Random *rnd, double *pdf_A) {
 	const double z = rnd->next01() * 2.0 - 1.0;
 	const double sz = sqrt(1 - z*z);
 	const double phi = rnd->next01() * 2.0 * kPI;
-	return Vec(sz * cos(phi), sz * sin(phi), z);
+
+	*pdf_A = 1.0 / (4.0 * kPI * R * R);
+
+	return R * Vec(sz * cos(phi), sz * sin(phi), z);
 }
 
 // ロシアンルーレットの確率計算関数
+// 局所的な情報に基づいて決定する
 double russian_roulette(const Sphere &sphere) {
 	return sphere.emission.length_squared() > 0 ? 1.0 : std::max(sphere.color.x, std::max(sphere.color.y, sphere.color.z));
 }
