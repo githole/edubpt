@@ -91,7 +91,7 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 		total_pdf_A *= russian_roulette_probability;
 		
 		const Vec between = now_ray.org - hitpoint.position;
-		// 新しい頂点をサンプリングするための確率密度関数は立体角測度に関するものであったため、これを面積速度に関する確率密度関数に変換する
+		// 新しい頂点をサンプリングするための確率密度関数は立体角測度に関するものであったため、これを面積測度に関する確率密度関数に変換する
 		const double now_sampled_pdf_A = now_sampled_pdf_omega * (dot(normalize(between), orienting_normal) / between.length_squared());
 		// 全ての頂点をサンプリングする確率密度の総計を出す
 		total_pdf_A *= now_sampled_pdf_A;

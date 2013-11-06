@@ -197,7 +197,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			case Vertex::OBJECT_TYPE_LENS:
 				// ここに入るのはnum_eye_vertex == 1のときだけ
 				{
-					// Lightパスを直接レンズにつなげるパターン		
+					// lightパスを直接レンズにつなげるパターン		
 					Vec position_on_lens, position_on_objectplane, position_on_imagesensor, uv_on_imagesensor;
 					const double lens_t = camera.intersect_lens(test_ray, &position_on_lens, &position_on_objectplane, &position_on_imagesensor, &uv_on_imagesensor);		
 					if (kEPS < lens_t && lens_t < intersection.hitpoint.distance) {
@@ -213,7 +213,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 
 						eye_weight = camera.W_dash(x0_xV, x0_xI, x0_x1) * eye_weight;
 					} else {
-						// Lightパスを直接レンズにつなげようとしたが、遮蔽されたりイメージセンサにヒットしなかった場合、終わり
+						// lightパスを直接レンズにつなげようとしたが、遮蔽されたりイメージセンサにヒットしなかった場合、終わり
 						continue;
 					}
 				}

@@ -31,7 +31,7 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 	camera.sample_points(imagebuffer_x, imagebuffer_y, rnd, &position_on_imagesensor, &position_on_objectplane, &position_on_lens, &P_Image, &P_lens);
 
 	double total_pdf_A = P_lens;
-	Color MC_throughput(1, 1, 1); // PTの場合、これはBRDFやG項の積となり、最後に光源からの影響と乗算することでイメージセンサへの寄与を計算することになる
+	Color MC_throughput(1, 1, 1); // Pathtracingの場合、これはBRDFやG項の積となり、最後に光源からの影響と乗算することでイメージセンサへの寄与を計算することになる
 	
 	// レンズ上の頂点（x0）を頂点リストに追加
 	vertices.push_back(Vertex(position_on_lens, camera.normal_on_lens, camera.normal_on_lens, -1, Vertex::OBJECT_TYPE_LENS, total_pdf_A, MC_throughput));
@@ -40,7 +40,7 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 	double now_sampled_pdf_omega = 1.0;
 	Vec previous_normal = camera.normal_on_lens;
 
-	for (int now_vertex_id = 1;; ++now_vertex_id) {
+	for (int now_vertex_index = 1;; ++now_vertex_index) {
 		Intersection intersection;
 		if (!intersect_scene(now_ray, &intersection))
 			break;
@@ -58,7 +58,7 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 		total_pdf_A *= russian_roulette_probability;
 		
 		const Vec between = now_ray.org - hitpoint.position;
-		if (now_vertex_id == 1) 
+		if (now_vertex_index == 1) 
 		{
 			// x1のサンプリング確率密度はイメージセンサ上のサンプリング確率密度を変換することで求める
 			const Vec x0_xI = position_on_imagesensor - position_on_lens;

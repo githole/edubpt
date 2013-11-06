@@ -97,7 +97,7 @@ int render_by_pathtracing(const Camera &camera, const int num_threads) {
 			}
 		}
 	}
-	
+
 	// サンプル数で割る + 左右反転
 	std::vector<Color> finale_buffer(width * height);
 	for (int y = 0; y < height; ++y)
@@ -179,7 +179,6 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 		thread_id = omp_get_thread_num();
 #endif
 		Random random(thread_id * 32);
-		
 		for (int iteration = 0; iteration < iteration_per_thread; ++iteration) {
 			if (thread_id == 0)
 				std::cerr << "Rendering (" << ((double)(num_threads * (iteration + 1))) << " bidirectional sampling/pixel) "
