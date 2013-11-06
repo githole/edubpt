@@ -131,6 +131,8 @@ struct Camera {
 	// イメージセンサ上とレンズ上にサンプルを生成する
 	void sample_points(const int imagebuffer_x, const int imagebuffer_y, Random *random, Vec *position_on_imagesensor, Vec *position_on_objectplane, Vec *position_on_lens, double *P_Image, double *P_lens) const {
 		// イメージセンサー上でサンプル生成
+		// 生成するのはimagebuffer_x, yのピクセル内
+
 		// ピクセル内の座標、[0, 1]の範囲
 		const double u_on_pixel = random->next01();
 		const double v_on_pixel = random->next01();
@@ -161,7 +163,7 @@ struct Camera {
 			u_on_lens * lens_u +
 			v_on_lens * lens_v; // x0
 		
-		*P_Image = 1.0 / (imagesensor_width * imagesensor_height); // ピクセル内の一点をサンプリングする確率密度関数（面積測度）
+		*P_Image = 1.0 / (pixel_width * pixel_height); // ピクセル内の一点をサンプリングする確率密度関数（面積測度）
 		*P_lens = sampling_pdf_on_lens(); // レンズ上の一点をサンプリングする確率密度関数（面積測度）
 	}
 

@@ -18,7 +18,10 @@
 
 namespace edubpt {
 
-	
+//
+// 各種レンダリングアルゴリズムを使って実際に画像をレンダリングする関数群
+//
+
 int render_by_refernce_pathtracing(const Camera &camera, const int num_threads) {
 	const int width = camera.image_width_px;
 	const int height = camera.image_height_px;
@@ -60,7 +63,7 @@ int render_by_refernce_pathtracing(const Camera &camera, const int num_threads) 
 	std::vector<Color> finale_buffer(width * height);
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x)
-			finale_buffer[y * width + x] = image_buffer[y * width + (width - x - 1)] / ((double)width * height * spp);
+			finale_buffer[y * width + x] = image_buffer[y * width + (width - x - 1)] / spp;
 	// 出力
 	save_ppm_file("image_ref_pt.ppm", &finale_buffer[0], width, height);
 
@@ -99,7 +102,7 @@ int render_by_pathtracing(const Camera &camera, const int num_threads) {
 	std::vector<Color> finale_buffer(width * height);
 	for (int y = 0; y < height; ++y)
 		for (int x = 0; x < width; ++x)
-			finale_buffer[y * width + x] = image_buffer[y * width + (width - x - 1)] / ((double)width * height * spp);
+			finale_buffer[y * width + x] = image_buffer[y * width + (width - x - 1)] / spp;
 	// 出力
 	save_ppm_file("image_pt.ppm", &finale_buffer[0], width, height);
 
@@ -143,11 +146,14 @@ void render_by_lighttracing(const Camera &camera, const int num_threads) {
 	}
 	
 	// サンプル数で割る + 左右反転
+	// Lighttracingでは、光源からパスを生成した回数＝各画素におけるモンテカルロ積分のサンプル数、になるため、
+	// 光源からパスを生成した回数で割ることになる。
 	std::vector<Color> final_buffer(width * height);
 	for (int t = 0; t < num_threads; ++t)
 		for (int y = 0; y < height; ++y)
 			for (int x = 0; x < width; ++x) {
-				final_buffer[y * width + x] = final_buffer[y * width + x] + image_buffer[(t * width * height) + y * width + (width - x - 1)] / ((double)samples_per_thread * num_threads);
+				final_buffer[y * width + x] = final_buffer[y * width + x] + 
+					image_buffer[(t * width * height) + y * width + (width - x - 1)] / ((double)samples_per_thread * num_threads);
 			}
 	// 出力
 	save_ppm_file("image_lt.ppm", &final_buffer[0], width, height);
@@ -169,7 +175,9 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 	int thread_id = 0;
 #pragma omp parallel private(thread_id)
 	{
+#ifdef USE_OPENMP
 		thread_id = omp_get_thread_num();
+#endif
 		Random random(thread_id * 32);
 		
 		for (int iteration = 0; iteration < iteration_per_thread; ++iteration) {
@@ -185,20 +193,32 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 						const int ix = bpt_result.samples[i].imagebuffer_x;
 						const int iy = bpt_result.samples[i].imagebuffer_y;
 						const int idx = (thread_id * width * height) + (iy * width + ix);
-						if (is_valid_value(bpt_result.samples[i].value))
-							image_buffer[idx] = image_buffer[idx] + bpt_result.samples[i].value;
+						if (is_valid_value(bpt_result.samples[i].value)) {
+							// 得られたサンプルについて、サンプルが現在の画素（x,y)から発射されたeyeパスによるものだった場合、
+							// Ixy のモンテカルロ推定値はsamples[i].valueそのものなので、そのまま足す。その後、下の画像出力時に発射された回数の総計（iteration_per_thread * num_threads)で割る。
+							//
+							// 得られたサンプルについて、現在の画素から発射されたeyeパスによるものではなかった場合（lightパスが別の画素(x',y')に到達した場合）は
+							// Ix'y' のモンテカルロ推定値を新しく得たわけだが、この場合、画像全体に対して光源側からサンプルを生成し、たまたまx'y'にヒットしたと考えるため、
+							// このようなサンプルについては最終的に光源から発射した回数の総計（width * height * iteration_per_thread * num_threads)で割って、画素への寄与とする必要がある。
+							// iteration_per_thread * num_threadsの分は上と共通なので、width * heightで割ってからimage_bufferに足すことで、最終的な画像出力時に帳尻があり、正確な結果になる。
+							if (bpt_result.samples[i].start_from_pixel)
+								image_buffer[idx] = image_buffer[idx] + bpt_result.samples[i].value;
+							else
+								image_buffer[idx] = image_buffer[idx] + bpt_result.samples[i].value / ((double)width * height);
+						}
 					}
 				}
 			}
 		}
 	}
+
 	// サンプル数で割る + 左右反転
 	std::vector<Color> final_buffer(width * height);
 	for (int t = 0; t < num_threads; ++t)
 		for (int y = 0; y < height; ++y)
 			for (int x = 0; x < width; ++x) {
 				final_buffer[y * width + x] = final_buffer[y * width + x] + image_buffer[(t * width * height) + y * width + (width - x - 1)] /
-					((double)width * height * iteration_per_thread * num_threads);
+					(iteration_per_thread * num_threads);
 			}
 	// 出力
 	save_ppm_file("image_bpt.ppm", &final_buffer[0], width, height);

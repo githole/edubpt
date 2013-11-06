@@ -126,9 +126,10 @@ struct BidirectionalPathtracingResult {
 	struct Sample {
 		int imagebuffer_x, imagebuffer_y;
 		Color value;
+		bool start_from_pixel;
 		
-		Sample(const int imagebuffer_x, const int imagebuffer_y, const Color &value) :
-		imagebuffer_x(imagebuffer_x), imagebuffer_y(imagebuffer_y), value(value) {}
+		Sample(const int imagebuffer_x, const int imagebuffer_y, const Color &value, const bool start_from_pixel) :
+		imagebuffer_x(imagebuffer_x), imagebuffer_y(imagebuffer_y), value(value), start_from_pixel(start_from_pixel) {}
 	};
 	std::vector<Sample> samples;
 };
@@ -144,14 +145,14 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 	if (pt_result.is_light_hit) {
 		const double mis_weight = calc_mis_weight(camera, eye_vs[eye_vs.size()-1].total_pdf_A, eye_vs, light_vs, (const int)eye_vs.size(), 0);
 		const Color result = mis_weight * pt_result.value;
-		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(imagebuffer_x, imagebuffer_y, result));
+		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(imagebuffer_x, imagebuffer_y, result, true));
 	}
 	// num_eye_vertex == 0のとき、光源側からのパスがレンズにヒットしていれば、それをサンプルとして使用する
 	if (lt_result.is_lens_hit) {
 		const double mis_weight = calc_mis_weight(camera, light_vs[light_vs.size()-1].total_pdf_A, eye_vs, light_vs, 0, (const int)light_vs.size());
 		const int lx = lt_result.imagebuffer_x, ly = lt_result.imagebuffer_y;
 		const Color result =  mis_weight * lt_result.value;
-		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(lx, ly, result));
+		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(lx, ly, result, false));
 	}
 
 	// 各頂点間を接続する
@@ -254,7 +255,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 
 			// 最終的なモンテカルロコントリビューション = MIS重み * G項 * eye側端点->light側端点への重み * light側端点->eye側端点への重み * eye側スループット * light側スループット / パスのサンプリング確率密度の総計
 			const Color result = mis_weight * multiply(multiply(G * multiply(eye_weight, light_weight), eye_throughput), light_throughput) / total_pdf_A;
-			bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(target_x, target_y, result));
+			bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(target_x, target_y, result, num_eye_vertex <= 1 ? false : true));
 		}
 	}
 
