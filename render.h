@@ -217,7 +217,7 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 		for (int y = 0; y < height; ++y)
 			for (int x = 0; x < width; ++x) {
 				final_buffer[y * width + x] = final_buffer[y * width + x] + image_buffer[(t * width * height) + y * width + (width - x - 1)] /
-					(iteration_per_thread * num_threads);
+					((double)iteration_per_thread * num_threads);
 			}
 	// 出力
 	save_ppm_file("image_bpt.ppm", &final_buffer[0], width, height);

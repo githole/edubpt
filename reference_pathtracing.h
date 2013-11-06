@@ -1,5 +1,5 @@
-﻿#ifndef _REFERENCE_PATHTRACING_
-#define _REFERENCE_PATHTRACING_
+﻿#ifndef _REFERENCE_PATHTRACING_H_
+#define _REFERENCE_PATHTRACING_H_
 
 #include "random.h"
 #include "scene.h"

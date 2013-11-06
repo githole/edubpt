@@ -29,12 +29,15 @@ Vec sample_hemisphere_cos_term(const Vec &normal, Random *rnd, double *pdf_omega
 }
 
 // 半径Rの球面上から一点をサンプリング
+inline double sample_sphere_pdf_A(const double R) {
+	return 1.0 / (4.0 * kPI * R * R);
+}
 Vec sample_sphere(const double R, Random *rnd, double *pdf_A) {
 	const double z = rnd->next01() * 2.0 - 1.0;
 	const double sz = sqrt(1 - z*z);
 	const double phi = rnd->next01() * 2.0 * kPI;
 
-	*pdf_A = 1.0 / (4.0 * kPI * R * R);
+	*pdf_A = sample_sphere_pdf_A(R);
 
 	return R * Vec(sz * cos(phi), sz * sin(phi), z);
 }

@@ -74,7 +74,7 @@ double calc_pdf_A(const Camera &camera, const Vertex &from, const Vertex &next) 
 double calc_mis_weight(const Camera &camera, const double total_pdf_A, const std::vector<Vertex> &eye_vs, const std::vector<Vertex> &light_vs, const int num_eye_vertex, const int num_light_vertex) {
 	std::vector<const Vertex*> vs(num_light_vertex + num_eye_vertex);
 	std::vector<double> pi1_pi(num_eye_vertex + num_light_vertex);
-	const double PA_y0 = 1.0 / (kPI * spheres[LightID].radius * spheres[LightID].radius); // 光源上のサンプリング確率
+	const double PA_y0 = sample_sphere_pdf_A(spheres[LightID].radius); // 光源上のサンプリング確率
 	const double PA_x0 = camera.sampling_pdf_on_lens(); // レンズ上のサンプリング確率
 
 	// 頂点を一列に並べる
