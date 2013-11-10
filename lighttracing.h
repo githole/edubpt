@@ -132,7 +132,6 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 			// なお、pdf_omegaはδになる（立体角測度に関する確率密度）
 			// BRDFはcosθをかけて半球積分すると1、pdf_omegaはそのまま半球積分すると1になることからこのようになる。
 			MC_throughput = multiply(now_object.color / dot(normalize(between), orienting_normal), MC_throughput);
-					
 		} break;
 				
 		// ガラス

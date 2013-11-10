@@ -27,9 +27,16 @@ int main() {
 
 	const int num_threads = 10;
 
+	// リファレンス用のパストレーシングで画像生成（双方向パストレとは独立）
 //	edubpt::render_by_refernce_pathtracing(camera, num_threads);
+
+	// カメラ側から頂点生成して画像生成
 //	edubpt::render_by_pathtracing(camera, num_threads);
+
+	// 光源側から頂点生成して画像生成
 //	edubpt::render_by_lighttracing(camera, num_threads);
+
+	// 双方向パストレで画像生成
 	edubpt::render_by_bidirectional_pathtracing(camera, num_threads);
 	return 0;
 }
