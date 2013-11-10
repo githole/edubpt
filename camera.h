@@ -129,7 +129,10 @@ struct Camera {
 		return 1.0 / (kPI * lens_radius * lens_radius);
 	}
 	// イメージセンサ上とレンズ上にサンプルを生成する
-	void sample_points(const int imagebuffer_x, const int imagebuffer_y, Random *random, Vec *position_on_imagesensor, Vec *position_on_objectplane, Vec *position_on_lens, double *P_Image, double *P_lens) const {
+	void sample_points(
+		const int imagebuffer_x, const int imagebuffer_y, Random *random, 
+		Vec *position_on_imagesensor, Vec *position_on_objectplane, Vec *position_on_lens,
+		double *P_Image, double *P_lens) const {
 		// イメージセンサー上でサンプル生成
 		// 生成するのはimagebuffer_x, yのピクセル内
 
