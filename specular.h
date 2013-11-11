@@ -57,3 +57,4 @@ bool check_refraction(
 };
 
 #endif
+

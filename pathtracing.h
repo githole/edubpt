@@ -57,7 +57,7 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 		// 新しい頂点がサンプリングされたので、トータルの確率密度に乗算する
 		total_pdf_A *= russian_roulette_probability;
 		
-		const Vec between = now_ray.org - hitpoint.position;
+		const Vec to_next_vertex = now_ray.org - hitpoint.position;
 		if (now_vertex_index == 1) 
 		{
 			// x1のサンプリング確率密度はイメージセンサ上のサンプリング確率密度を変換することで求める
@@ -71,12 +71,12 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 			MC_throughput = camera.W_dash(x0_xV, x0_xI, x0_x1) * MC_throughput;
 		} else {
 			// 新しい頂点をサンプリングするための確率密度関数は立体角測度に関するものであったため、これを面積速度に関する確率密度関数に変換する
-			const double now_sampled_pdf_A = now_sampled_pdf_omega * (dot(normalize(between), orienting_normal) / between.length_squared());
+			const double now_sampled_pdf_A = now_sampled_pdf_omega * (dot(normalize(to_next_vertex), orienting_normal) / to_next_vertex.length_squared());
 			// 全ての頂点をサンプリングする確率密度の総計を出す
 			total_pdf_A *= now_sampled_pdf_A;
 		}
 		// ジオメトリターム（G項）
-		const double G =  dot(normalize(between), orienting_normal) * dot(normalize(-1.0 * between), previous_normal) / between.length_squared();
+		const double G =  dot(normalize(to_next_vertex), orienting_normal) * dot(normalize(-1.0 * to_next_vertex), previous_normal) / to_next_vertex.length_squared();
 		MC_throughput = G * MC_throughput;
 
 		// 光源にヒットしたらそこで追跡終了（光源の反射率がゼロであることを仮定しており、これ以上の追跡は全てMC_throughputがゼロになるため。光源にも反射率があるならこの限りではない）
@@ -112,7 +112,7 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 			// スループット調整
 			// sample_pdf_omegaのDiracのδ関数とキャンセルするため、係数のみ与える（このあたりはLighttracingと同様）
 			// ガラスの場合も同様
-			MC_throughput = multiply(now_object.color / dot(normalize(between), orienting_normal), MC_throughput);
+			MC_throughput = multiply(now_object.color / dot(normalize(to_next_vertex), orienting_normal), MC_throughput);
 		} break;
 		// ガラス
 		case REFLECTION_TYPE_REFRACTION: {
@@ -125,7 +125,7 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 				if (rnd->next01() < reflection_probability) { // 反射
 					now_sampled_pdf_omega = 1.0;
 					now_ray = Ray(hitpoint.position, reflection_dir);
-					MC_throughput = fresnel_reflectance * multiply(now_object.color / dot(normalize(between), orienting_normal), MC_throughput);
+					MC_throughput = fresnel_reflectance * multiply(now_object.color / dot(normalize(to_next_vertex), orienting_normal), MC_throughput);
 					total_pdf_A *= reflection_probability;
 				} else { // 屈折
 					const double nnt2 = 
@@ -134,14 +134,14 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 						refractive_index_of_object / refractive_index_of_vaccum, 2.0); 
 					now_sampled_pdf_omega = 1.0;
 					now_ray = Ray(hitpoint.position, refraction_dir);
-					MC_throughput = nnt2 * fresnel_transmittance * multiply(now_object.color / dot(normalize(between), orienting_normal), MC_throughput);
+					MC_throughput = nnt2 * fresnel_transmittance * multiply(now_object.color / dot(normalize(to_next_vertex), orienting_normal), MC_throughput);
 					total_pdf_A *= 1.0 - reflection_probability;
 				}
 			} else {
 				// 全反射
 				now_sampled_pdf_omega = 1.0;
 				now_ray = Ray(hitpoint.position, reflection_dir);
-				MC_throughput = multiply(now_object.color / dot(normalize(between), orienting_normal), MC_throughput);
+				MC_throughput = multiply(now_object.color / dot(normalize(to_next_vertex), orienting_normal), MC_throughput);
 				break;
 			}
 		} break;
