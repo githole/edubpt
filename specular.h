@@ -10,7 +10,7 @@ namespace edubpt {
 // 入射点における法線がnormal
 // 返り値は入射点から出射する、反射ベクトル
 Vec reflection_vector(const Vec &in, const Vec &normal) {
-	return in - normal * 2.0 * dot(normal, in);
+	return normalize(in - normal * 2.0 * dot(normal, in));
 }
 
 // falseなら全反射

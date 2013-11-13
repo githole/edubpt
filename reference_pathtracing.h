@@ -26,7 +26,7 @@ Color radiance_no_recursion(const Ray &ray, Random *rnd) {
 		}
 		// ロシアンルーレット
 		const Sphere &now_object = spheres[intersection.object_id];
-		const double russian_roulette_probability = russian_roulette(now_object); // using only local information of the vertex
+		const double russian_roulette_probability = russian_roulette(now_object);
 		if (rnd->next01() >= russian_roulette_probability) {
 			break;
 		}
@@ -50,15 +50,15 @@ Color radiance_no_recursion(const Ray &ray, Random *rnd) {
 			pdf    *= pdf_omega;
 		} break;
 		// 完全鏡面
-		case REFLECTION_TYPE_SPECULAR: {
+		case REFLECTION_TYPE_MIRROR: {
 			// 完全鏡面なのでレイの反射方向は決定的。
 			now_ray = Ray(hitpoint.position, reflection_vector(now_ray.dir, hitpoint.normal));
 			weight = multiply(weight, now_object.color);
 			pdf    *= 1.0;
 		} break;
 		// 屈折率kIorのガラス
-		case REFLECTION_TYPE_REFRACTION: {
-			const bool into = dot(hitpoint.normal, orienting_normal) > 0.0; // レイがオブジェクトから出るのか、入るのか
+		case REFLECTION_TYPE_GLASS: {
+			const bool into = dot(hitpoint.normal, orienting_normal) > 0.0; // レイがオブジェクトから出るのか、入るのか。
 
 			Vec reflection_dir, refraction_dir;
 			double fresnel_reflectance, fresnel_transmittance;

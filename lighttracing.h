@@ -27,7 +27,7 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 	const Vec normal_on_light = normalize(position_on_light - spheres[LightID].position);
 	double total_pdf_A = pdf_A_on_light; // 確率密度の積を保持（面積測度に関する確率密度）
 
-	 // 光源上に生成された頂点を頂点リストに追加
+	 // 光源上に生成された頂点を頂点リストに追加。
 	vertices.push_back(Vertex(position_on_light, normal_on_light, normal_on_light, LightID, Vertex::OBJECT_TYPE_LIGHT, total_pdf_A, Color(0, 0, 0)));
 
 	// 現在の放射輝度（モンテカルロ積分のスループット）
@@ -35,7 +35,7 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 	// 完全拡散光源を仮定しているので、方向に依らずに一定の値（spheres[LightID].emission）になる。
 	Color MC_throughput = spheres[LightID].emission; 
 
-	// 完全拡散光源を仮定しているので、Diffuse面におけるサンプリング方法と同じものをつかって次の方向を決める
+	// 完全拡散光源を仮定しているので、Diffuse面におけるサンプリング方法と同じものをつかって次の方向を決める。
 	double now_sampled_pdf_omega;
 	const Vec next_dir = sample_hemisphere_cos_term(normal_on_light, rnd, &now_sampled_pdf_omega);
 	Ray now_ray(position_on_light, next_dir);
@@ -54,14 +54,14 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 			const Vec x0_xV = position_on_objectplane - position_on_lens;
 			const Vec x0_x1 = now_ray.org - position_on_lens;
 
-			// イメージセンサ（ピクセル上）の位置、入射方向によって寄与率が変わる
+			// イメージセンサ（ピクセル上）の位置、入射方向によって寄与率が変わる。
 			// （が、今回はWを定数にしているのでは寄与率は変わらない）
 			int x = (int)uv_on_imagesensor.x;
 			int y = (int)uv_on_imagesensor.y;
 			clamp(x, 0, camera.image_width_px);
 			clamp(y, 0, camera.image_height_px);
 					
-			// レンズの上の点のサンプリング確率を計算
+			// レンズの上の点のサンプリング確率を計算。
 			const double now_sampled_pdf_A = now_sampled_pdf_omega * (dot(normalize(x0_x1), normalize(camera.imagesensor_dir)) / x0_x1.length_squared());
 			total_pdf_A *= now_sampled_pdf_A;
 
@@ -72,7 +72,7 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 			// レンズ上に生成された点を頂点リストに追加（基本的に使わない）
 			vertices.push_back(Vertex(position_on_lens, normalize(camera.imagesensor_dir), normalize(camera.imagesensor_dir), -1, Vertex::OBJECT_TYPE_LENS, total_pdf_A, MC_throughput));
 					
-			// 幾何的な係数計算 + センサーセンシティビティを計算してモンテカルロ積分して最終的な結果を得る
+			// 幾何的な係数計算 + センサーセンシティビティを計算してモンテカルロ積分して最終的な結果を得る。
 			const Color result = (camera.W_dash(x0_xV, x0_xI, x0_x1) * MC_throughput) / total_pdf_A;
 			return LighttracingResult(result, x, y, true);
 		}
@@ -88,20 +88,20 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 			break;
 		}
 		
-		// 新しい頂点がサンプリングされたので、トータルの確率密度に乗算する
+		// 新しい頂点がサンプリングされたので、トータルの確率密度に乗算する。
 		total_pdf_A *= russian_roulette_probability;
 		
 		const Vec to_next_vertex = now_ray.org - hitpoint.position;
-		// 新しい頂点をサンプリングするための確率密度関数は立体角測度に関するものであったため、これを面積測度に関する確率密度関数に変換する
+		// 新しい頂点をサンプリングするための確率密度関数は立体角測度に関するものであったため、これを面積測度に関する確率密度関数に変換する。
 		const double now_sampled_pdf_A = now_sampled_pdf_omega * (dot(normalize(to_next_vertex), orienting_normal) / to_next_vertex.length_squared());
-		// 全ての頂点をサンプリングする確率密度の総計を出す
+		// 全ての頂点をサンプリングする確率密度の総計を出す。
 		total_pdf_A *= now_sampled_pdf_A;
 
 		// ジオメトリターム（G項）
 		const double G =  dot(normalize(to_next_vertex), orienting_normal) * dot(normalize(-1.0 * to_next_vertex), previous_normal) / to_next_vertex.length_squared();
 		MC_throughput = G * MC_throughput;
 
-		// 新しい頂点を頂点リストに追加する
+		// 新しい頂点を頂点リストに追加する。
 		vertices.push_back(Vertex(hitpoint.position, orienting_normal, hitpoint.normal, intersection.object_id, 
 				now_object.reflection_type == REFLECTION_TYPE_DIFFUSE ? Vertex::OBJECT_TYPE_DIFFUSE :Vertex::OBJECT_TYPE_SPECULAR, 
 				total_pdf_A, MC_throughput));
@@ -109,7 +109,7 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 
 		
 		// 材質ごとの処理
-		// 次の頂点をサンプリングするために、新しいレイの方向を決める
+		// 次の頂点をサンプリングするために、新しいレイの方向を決める。
 		switch (now_object.reflection_type) {
 		// 完全拡散面
 		case REFLECTION_TYPE_DIFFUSE: {
@@ -121,22 +121,22 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 		} break;
 				
 		// 完全鏡面
-		case REFLECTION_TYPE_SPECULAR: {
+		case REFLECTION_TYPE_MIRROR: {
 			// 完全鏡面なのでレイの反射方向は決定的。
-			// スペキュラ面におけるサンプリング確率密度はDiracのδ関数の形をとるが、分母とキャンセルされるため、係数のみ与える
+			// スペキュラ面におけるサンプリング確率密度はDiracのδ関数の形をとるが、分母とキャンセルされるため、係数のみ与える。
 			now_sampled_pdf_omega = 1.0;
 			now_ray = Ray(hitpoint.position, reflection_vector(now_ray.dir, hitpoint.normal));
 
 			// スループット調整
-			// スペキュラBRDFはδ/cosθになる（立体角測度に関する関数）
-			// また、このδはpdf_omegaのδとキャンセルされる（よって、δの扱いは無視してよい。now_sampled_pdf_omega = 1.0にしたのもそのため）
-			// なお、pdf_omegaはδになる（立体角測度に関する確率密度）
+			// スペキュラBRDFはδ/cosθになる。（立体角測度に関する関数）
+			// また、このδはpdf_omegaのδとキャンセルされる。（よって、δの扱いは無視してよい。now_sampled_pdf_omega = 1.0にしたのもそのため）
+			// なお、pdf_omegaはδになる。（立体角測度に関する確率密度）
 			// BRDFはcosθをかけて半球積分すると1、pdf_omegaはそのまま半球積分すると1になることからこのようになる。
 			MC_throughput = multiply(now_object.color / dot(normalize(to_next_vertex), orienting_normal), MC_throughput);
 		} break;
 				
 		// ガラス
-		case REFLECTION_TYPE_REFRACTION: {
+		case REFLECTION_TYPE_GLASS: {
 			const bool into = dot(hitpoint.normal, orienting_normal) > 0.0; // レイがオブジェクトから出るのか、入るのか
 
 			Vec reflection_dir, refraction_dir;

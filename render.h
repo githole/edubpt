@@ -193,10 +193,10 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 						const int iy = bpt_result.samples[i].imagebuffer_y;
 						const int idx = (thread_id * width * height) + (iy * width + ix);
 						if (is_valid_value(bpt_result.samples[i].value)) {
-							// 得られたサンプルについて、サンプルが現在の画素（x,y)から発射されたeyeパスによるものだった場合、
+							// 得られたサンプルについて、サンプルが現在の画素（x,y)から発射されたeyeサブパスを含むものだった場合、
 							// Ixy のモンテカルロ推定値はsamples[i].valueそのものなので、そのまま足す。その後、下の画像出力時に発射された回数の総計（iteration_per_thread * num_threads)で割る。
 							//
-							// 得られたサンプルについて、現在の画素から発射されたeyeパスによるものではなかった場合（lightパスが別の画素(x',y')に到達した場合）は
+							// 得られたサンプルについて、現在の画素から発射されたeyeサブパスを含むものではなかった場合（lightサブパスが別の画素(x',y')に到達した場合）は
 							// Ix'y' のモンテカルロ推定値を新しく得たわけだが、この場合、画像全体に対して光源側からサンプルを生成し、たまたまx'y'にヒットしたと考えるため、
 							// このようなサンプルについては最終的に光源から発射した回数の総計（width * height * iteration_per_thread * num_threads)で割って、画素への寄与とする必要がある。
 							// iteration_per_thread * num_threadsの分は上と共通なので、width * heightで割ってからimage_bufferに足すことで、最終的な画像出力時に帳尻があり、正確な結果になる。
