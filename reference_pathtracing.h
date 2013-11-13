@@ -32,11 +32,12 @@ Color radiance_no_recursion(const Ray &ray, Random *rnd) {
 		}
 		pdf *= russian_roulette_probability;
 
-		// 影響加算
+		// 放射輝度加算
 		L = L + multiply(weight, now_object.emission) / pdf;
 	
 		const Hitpoint &hitpoint = intersection.hitpoint;
-		const Vec orienting_normal = dot(hitpoint.normal , now_ray.dir) < 0.0 ? hitpoint.normal: (-1.0 * hitpoint.normal); // 交差位置の法線（物体からのレイの入出を考慮）
+		 // 交差位置の法線（物体からのレイの入出を考慮）
+		const Vec orienting_normal = dot(hitpoint.normal , now_ray.dir) < 0.0 ? hitpoint.normal: (-1.0 * hitpoint.normal);
 
 		switch (now_object.reflection_type) {
 		// 完全拡散面
@@ -62,7 +63,9 @@ Color radiance_no_recursion(const Ray &ray, Random *rnd) {
 
 			Vec reflection_dir, refraction_dir;
 			double fresnel_reflectance, fresnel_transmittance;
-			if (check_refraction(into, hitpoint.position, now_ray.dir, hitpoint.normal, orienting_normal, &reflection_dir, &refraction_dir, &fresnel_reflectance, &fresnel_transmittance)) {
+			if (check_refraction(
+				into, hitpoint.position, now_ray.dir, hitpoint.normal, orienting_normal,
+				&reflection_dir, &refraction_dir, &fresnel_reflectance, &fresnel_transmittance)) {
 				// 屈折 + 反射
 				if (rnd->next01() < reflection_probability) { // 反射
 					now_ray = Ray(hitpoint.position, reflection_dir);
@@ -88,7 +91,6 @@ Color radiance_no_recursion(const Ray &ray, Random *rnd) {
 		} break;
 		}
 	}
-
 	return L;
 }
 

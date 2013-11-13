@@ -47,7 +47,8 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 		
 		const Sphere &now_object = spheres[intersection.object_id];
 		const Hitpoint &hitpoint = intersection.hitpoint;
-		const Vec orienting_normal = dot(hitpoint.normal , now_ray.dir) < 0.0 ? hitpoint.normal: (-1.0 * hitpoint.normal); // 交差位置の法線（物体からのレイの入出を考慮）
+		 // 交差位置の法線（物体からのレイの入出を考慮）
+		const Vec orienting_normal = dot(hitpoint.normal , now_ray.dir) < 0.0 ? hitpoint.normal: (-1.0 * hitpoint.normal);
 		const double russian_roulette_probability = russian_roulette(now_object);
 		
 		// ロシアンルーレットによって、新しい頂点を「実際に」サンプリングし、生成するのかどうかを決定する。
@@ -120,7 +121,9 @@ PathtracingResult generate_vertices_by_pathtracing(const Camera &camera, const i
 
 			Vec reflection_dir, refraction_dir;
 			double fresnel_reflectance, fresnel_transmittance;
-			if (check_refraction(into, hitpoint.position, now_ray.dir, hitpoint.normal, orienting_normal, &reflection_dir, &refraction_dir, &fresnel_reflectance, &fresnel_transmittance)) {
+			if (check_refraction(
+				into, hitpoint.position, now_ray.dir, hitpoint.normal, orienting_normal,
+				&reflection_dir, &refraction_dir, &fresnel_reflectance, &fresnel_transmittance)) {
 				// 屈折 + 反射
 				if (rnd->next01() < reflection_probability) { // 反射
 					now_sampled_pdf_omega = 1.0;
