@@ -31,6 +31,8 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 	vertices.push_back(Vertex(position_on_light, normal_on_light, normal_on_light, LightID, Vertex::OBJECT_TYPE_LIGHT, total_pdf_A, Color(0, 0, 0)));
 
 	// 現在の放射輝度（モンテカルロ積分のスループット）
+	// 本当は次の頂点（y1）が決まらないと光源からその方向への放射輝度値は決まらないが、今回は
+	// 完全拡散光源を仮定しているので、方向に依らずに一定の値（spheres[LightID].emission）になる。
 	Color MC_throughput = spheres[LightID].emission; 
 
 	// 完全拡散光源を仮定しているので、Diffuse面におけるサンプリング方法と同じものをつかって次の方向を決める
@@ -39,7 +41,6 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 	Ray now_ray(position_on_light, next_dir);
 	Vec previous_normal = normal_on_light;
 	
-	double russian_roulette_probability = 1.0;
 	for (;;) {
 		Intersection intersection;
 		const bool scene_hit = intersect_scene(now_ray, &intersection);
@@ -81,7 +82,7 @@ LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Rando
 		const Sphere &now_object = spheres[intersection.object_id];
 		const Hitpoint &hitpoint = intersection.hitpoint;
 		const Vec orienting_normal = dot(hitpoint.normal , now_ray.dir) < 0.0 ? hitpoint.normal: (-1.0 * hitpoint.normal); // 交差位置の法線（物体からのレイの入出を考慮）
-		russian_roulette_probability = russian_roulette(now_object);
+		const double russian_roulette_probability = russian_roulette(now_object);
 		// ロシアンルーレット
 		if (rnd->next01() >= russian_roulette_probability) {
 			break;
