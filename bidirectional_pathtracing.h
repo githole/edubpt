@@ -62,6 +62,7 @@ double calc_pdf_A(const Camera &camera, const std::vector<const Vertex*> &vs, co
 		// 次の頂点のサンプリング確率が変わる。
 		if (spheres[from_vertex.objectID].reflection_type == REFLECTION_TYPE_GLASS) {
 			if (prev_from_vertex != NULL) {
+				// from頂点のひとつ前の頂点に基づいて、物体に入り込んでいるのか、それとも出て行くのかを判定する。
 				const Vec into_from_vertex = normalize(from_vertex.position - prev_from_vertex->position);
 				const bool into = dot(into_from_vertex, from_vertex.object_normal) < 0.0; // prev_from_vertexからfrom_vertexへのベクトルが、スペキュラ物体に入るのか、それとも出るのか
 				const Vec from_new_orienting_normal = into ? from_vertex.object_normal : -1.0 * from_vertex.object_normal;
@@ -194,7 +195,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			// 頂点を接続することで新しく導入される項（基本的にBRDFとG項）
 			Color connection_throughput(1, 1, 1);
 			
-			// nun_light_vertex == 1のとき、非完全拡散光源の場合は相手の頂点の位置次第でMCスループットが変化するため改めて光源からの放射輝度値を計算する。
+			// num_light_vertex == 1のとき、非完全拡散光源の場合は相手の頂点の位置次第でMCスループットが変化するため改めて光源からの放射輝度値を計算する。
 			// 今回は完全拡散光源なので単純にemissionの値を入れる。
 			if (num_light_vertex == 1) {
 				light_throughput = spheres[light_vs[0].objectID].emission;
@@ -253,8 +254,8 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 				connection_throughput = multiply(connection_throughput, spheres[light_end.objectID].color / kPI);
 				break;
 			case Vertex::OBJECT_TYPE_LIGHT:
-				// 光源の反射率0を仮定しているため、ライトトレーシングの時、最初の頂点以外は光源上に頂点生成されないため、
-				// nun_light_vertex == 1以外でここに入ってくることは無い。
+				// 光源の反射率0を仮定しているため、ライトトレーシングの時、最初の頂点以外は光源上に頂点生成されず、
+				// num_light_vertex == 1以外でここに入ってくることは無い。
 				break;
 				// lightサブパスの端点がスペキュラやレンズだった場合は重みがゼロになりパス全体の寄与もゼロになるので、処理終わり。
 			case Vertex::OBJECT_TYPE_LENS:
