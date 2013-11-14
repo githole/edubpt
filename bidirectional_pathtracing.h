@@ -32,7 +32,7 @@ double calc_pdf_A(const Camera &camera, const std::vector<const Vertex*> &vs, co
 	const Vec normalized_to = normalize(to);
 	double pdf = 0.0;
 
-	// 始点のオブジェクトの種類によって、その次の頂点のサンプリング確率の計算方法が変わる。
+	// 頂点fromのオブジェクトの種類によって、その次の頂点のサンプリング確率密度の計算方法が変わる。
 	switch (from_vertex.type) {
 	case Vertex::OBJECT_TYPE_LIGHT:
 	case Vertex::OBJECT_TYPE_DIFFUSE:
@@ -58,20 +58,20 @@ double calc_pdf_A(const Camera &camera, const std::vector<const Vertex*> &vs, co
 		}
 		break;
 	case Vertex::OBJECT_TYPE_SPECULAR:
-		// 始点がスペキュラ上に存在した場合、次の点が屈折によってサンプリングされたのか、反射によってサンプリングされたかによって
-		// 次の頂点のサンプリング確率が変わる。
-		if (spheres[from_vertex.objectID].reflection_type == REFLECTION_TYPE_GLASS) {
+		if (spheres[from_vertex.objectID].reflection_type == REFLECTION_TYPE_GLASS) {			
+			// 始点がガラス上に存在した場合、次の点が屈折によってサンプリングされたのか、反射によってサンプリングされたかによって
+			// 次の頂点のサンプリング確率が変わるので、その判定を行う。
 			if (prev_from_vertex != NULL) {
 				// from頂点のひとつ前の頂点に基づいて、物体に入り込んでいるのか、それとも出て行くのかを判定する。
-				const Vec into_from_vertex = normalize(from_vertex.position - prev_from_vertex->position);
-				const bool into = dot(into_from_vertex, from_vertex.object_normal) < 0.0; // prev_from_vertexからfrom_vertexへのベクトルが、スペキュラ物体に入るのか、それとも出るのか
+				const Vec into_from_vertex_dir = normalize(from_vertex.position - prev_from_vertex->position);
+				const bool into = dot(into_from_vertex_dir, from_vertex.object_normal) < 0.0; // prev_from_vertexからfrom_vertexへのベクトルが、スペキュラ物体に入るのか、それとも出るのか
 				const Vec from_new_orienting_normal = into ? from_vertex.object_normal : -1.0 * from_vertex.object_normal;
 				
-				// 全反射しているかいないかを判定
+				// 全反射しているのか、していないのかを判定
 				Vec reflection_dir, refraction_dir;
 				double fresnel_reflectance, fresnel_transmittance;
 				if (check_refraction(
-					into, from_vertex.position, into_from_vertex, from_vertex.object_normal, from_new_orienting_normal,
+					into, from_vertex.position, into_from_vertex_dir, from_vertex.object_normal, from_new_orienting_normal,
 					&reflection_dir, &refraction_dir, &fresnel_reflectance, &fresnel_transmittance)) {
 					// 反射 or 屈折
 					pdf = dot(from_new_orienting_normal, normalized_to) > 0.0 ? reflection_probability : 1.0 - reflection_probability;
@@ -158,16 +158,16 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 	BidirectionalPathtracingResult bpt_result;
 
 	std::vector<Vertex> eye_vs, light_vs;
-	PathtracingResult  pt_result = generate_vertices_by_pathtracing(camera, imagebuffer_x, imagebuffer_y, rnd, eye_vs);
-	LighttracingResult lt_result = generate_vertices_by_lighttracing(camera, rnd, light_vs);
+	const PathtracingResult  pt_result = generate_vertices_by_pathtracing(camera, imagebuffer_x, imagebuffer_y, rnd, eye_vs);
+	const LighttracingResult lt_result = generate_vertices_by_lighttracing(camera, rnd, light_vs);
 
-	// num_light_vertex == 0のとき、カメラ側からのパスが光源にヒットしていれば、それをサンプルとして使用する。
+	// num_light_vertex == 0のとき、カメラ側からのパスが光源にヒットしていれば、それをそのまま使用する。
 	if (pt_result.is_light_hit) {
 		const double mis_weight = calc_mis_weight(camera, eye_vs[eye_vs.size()-1].total_pdf_A, eye_vs, light_vs, (const int)eye_vs.size(), 0);
 		const Color result = mis_weight * pt_result.value;
 		bpt_result.samples.push_back(BidirectionalPathtracingResult::Sample(imagebuffer_x, imagebuffer_y, result, true));
 	}
-	// num_eye_vertex == 0のとき、光源側からのパスがレンズにヒットしていれば、それをサンプルとして使用する。
+	// num_eye_vertex == 0のとき、光源側からのパスがレンズにヒットしていれば、それをそのまま使用する。
 	if (lt_result.is_lens_hit) {
 		const double mis_weight = calc_mis_weight(camera, light_vs[light_vs.size()-1].total_pdf_A, eye_vs, light_vs, 0, (const int)light_vs.size());
 		const int lx = lt_result.imagebuffer_x, ly = lt_result.imagebuffer_y;
@@ -189,7 +189,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			if (total_pdf_A == 0)
 				continue;
 					
-			// MCスループットと重み計算
+			// MCスループット
 			Color eye_throughput = eye_end.throughput;
 			Color light_throughput = light_end.throughput;
 			// 頂点を接続することで新しく導入される項（基本的にBRDFとG項）
@@ -204,7 +204,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			// 端点間でレイトレーシングしておく。
 			Intersection intersection;
 			const Vec light_end_to_eye_end = eye_end.position - light_end.position;
-			Ray test_ray = Ray(light_end.position, normalize(light_end_to_eye_end));
+			const Ray test_ray = Ray(light_end.position, normalize(light_end_to_eye_end));
 			intersect_scene(test_ray, &intersection);
 					
 			// eyeサブパスのスループット調整のための重み計算（主にBRDFの考慮のため）
@@ -212,7 +212,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			switch (eye_end.type) {
 			case Vertex::OBJECT_TYPE_DIFFUSE:
 				connection_throughput = multiply(connection_throughput, spheres[eye_end.objectID].color / kPI);
-				// 端点同士が別の物体で遮蔽されるかどうかを判定する。遮蔽されていたらアウト。
+				// 端点同士が別の物体で遮蔽されるかどうかを判定する。遮蔽されていたら処理終わり。
 				if ((intersection.hitpoint.position - eye_end.position).length() >= kEPS) {
 					continue;
 				}
@@ -228,7 +228,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 						const Vec x0_xI = position_on_imagesensor - position_on_lens;
 						const Vec x0_xV = position_on_objectplane - position_on_lens;
 						const Vec x0_x1 = test_ray.org - position_on_lens;
-							
+
 						target_x = (int)uv_on_imagesensor.x;
 						target_y = (int)uv_on_imagesensor.y;
 						clamp(target_x, 0, camera.image_width_px);
