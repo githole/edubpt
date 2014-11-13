@@ -14,6 +14,7 @@
 #include "lighttracing.h"
 
 #include <assert.h>
+#include <math.h>
 #include <iostream>
 
 namespace edubpt {
@@ -273,7 +274,7 @@ BidirectionalPathtracingResult bidirectional_pathtracing(const Camera &camera, c
 			// MISの重みを計算する。
 			const double mis_weight = calc_mis_weight(camera, total_pdf_A, eye_vs, light_vs, num_eye_vertex, num_light_vertex);
 
-			if (_isnan(mis_weight)) {
+			if (isnan(mis_weight)) {
 				continue;
 			}
 

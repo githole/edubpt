@@ -2,12 +2,13 @@
 #define _UTIL_H_
 
 #include <algorithm>
+#include <math.h>
 #include "constant.h"
 
 namespace edubpt {
 
 inline bool is_invalid_value(const Color &col) {
-	if (_isnan(col.x) || _isnan(col.y) || _isnan(col.z))
+	if (isnan(col.x) || isnan(col.y) || isnan(col.z))
 		return true;
 	if (col.x < 0.0 || kINF < col.x)
 		return true;
