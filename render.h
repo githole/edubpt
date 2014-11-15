@@ -8,7 +8,9 @@
 
 #include "ppm.h"
 
+#ifdef _OPENMP
 #define USE_OPENMP
+#endif // _OPENMP
 
 #ifdef USE_OPENMP
 #include <omp.h>
@@ -160,7 +162,7 @@ void render_by_lighttracing(const Camera &camera, const int num_threads) {
 }
 
 
-void render_by_bidirectional_pathtracing(const Camera &camera, const int num_threads) {
+void render_by_bidirectional_pathtracing(const Camera &camera, int num_threads) {
 	const int width = camera.image_width_px;
 	const int height = camera.image_height_px;
 	const int spp = camera.samples_per_pixel;
@@ -168,7 +170,9 @@ void render_by_bidirectional_pathtracing(const Camera &camera, const int num_thr
 	std::vector<Color> image_buffer(width * height * num_threads);
 #ifdef USE_OPENMP
 	omp_set_num_threads(num_threads);
-#endif
+#else
+	num_threads = 1;
+#endif // USE_OPENMP
 	
 	const long long iteration_per_thread = spp / num_threads;
 	std::cerr << "Average bidirectional sampling/pixel: " << (iteration_per_thread * num_threads) << std::endl;

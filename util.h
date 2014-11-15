@@ -6,8 +6,22 @@
 
 namespace edubpt {
 
+#if __STDC_VERSION__ >= 199901L
+	// isnanが定義されていると予想
+#else
+	// isnanが定義されていないと予想
+#if defined(_MSC_VER)
+	inline int isnan(double arg) {
+		return _isnan(arg);
+	}
+#else
+	// C99コンパイラでもなく、MSVCでもないなら諦める
+#endif // defined(_MSC_VER)
+
+#endif // __STDC_VERSION__ >= 199901L
+
 inline bool is_invalid_value(const Color &col) {
-	if (_isnan(col.x) || _isnan(col.y) || _isnan(col.z))
+	if (isnan(col.x) || isnan(col.y) || isnan(col.z))
 		return true;
 	if (col.x < 0.0 || kINF < col.x)
 		return true;
