@@ -2,6 +2,7 @@
 #define _UTIL_H_
 
 #include <algorithm>
+#include <math.h>
 #include "constant.h"
 
 namespace edubpt {

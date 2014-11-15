@@ -14,6 +14,7 @@
 #include "lighttracing.h"
 
 #include <assert.h>
+#include <math.h>
 #include <iostream>
 
 namespace edubpt {
